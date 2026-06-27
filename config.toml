@@ -1,0 +1,59 @@
+# Example config path:
+#   ~/.config/layout-pie/config.toml
+# You can also use config.yaml, config.yml, or set LAYOUT_PIE_CONFIG=/path/to/file.
+# Colors use "#RRGGBB" or "#RRGGBBAA". In the 8-digit form, AA is alpha.
+
+[behavior]
+number_shortcuts = true
+
+[text]
+window_title = "Layout Pie"
+heading = ""
+idle_hint = "Press 1-9/0 or hover a sector"
+hover_hint = "Click or press number to select"
+
+[geometry]
+menu_size = 420
+center_x = 210
+center_y = 210
+inner_radius = 72
+outer_radius = 170
+label_radius = 122
+gap_degrees = 0
+center_ring_inner_radius = 31
+center_ring_outer_radius = 40
+center_circle_radius = 30
+center_dot_radius = 8
+label_width = 84
+label_height = 38
+label_font_size = 17
+heading_y = 30
+heading_font_size = 20
+hint_y = 58
+hint_font_size = 12
+panel_radius = 34
+
+[theme]
+panel_background = "#061426dd"
+panel_border = "#1e4e74aa"
+heading_color = "#d8f3ff"
+hint_color = "#8fb8d4"
+sector_fill = "#0b243dcc"
+sector_active_fill = "#123f63cc"
+sector_stroke = "#245a7c99"
+sector_active_stroke = "#4fc6f5cc"
+hover_fill = "#168fd0dd"
+hover_pressed_fill = "#55cfffff"
+hover_stroke = "#a9efffff"
+label_background = "#0d2236dd"
+label_active_background = "#123f63cc"
+label_border = "#4a9fc8aa"
+label_active_border = "#8aeaffcc"
+label_hover_background = "#1e9edddd"
+label_text = "#dff7ff"
+center_background = "#07111fcc"
+center_border = "#28506fdd"
+center_ring_fill = "#9eefffff"
+center_ring_stroke = "#dff8ffff"
+dot_background = "#426985aa"
+dot_hover_background = "#b9f1ffff"

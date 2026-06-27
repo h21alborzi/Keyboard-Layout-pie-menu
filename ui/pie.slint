@@ -1,0 +1,280 @@
+export struct LayoutItem {
+    index: int,
+    label: string,
+    shortcut: string,
+    path: string,
+    center_path: string,
+    lx: float,
+    ly: float,
+    active: bool,
+}
+
+export component PieWindow inherits Window {
+    in property <[LayoutItem]> layouts;
+
+    in property <float> menu-size: 420;
+    in property <float> center-x: 210;
+    in property <float> center-y: 210;
+    in property <float> center-circle-radius: 30;
+    in property <float> center-dot-radius: 8;
+    in property <float> label-width: 84;
+    in property <float> label-height: 38;
+    in property <float> label-font-size: 17;
+    in property <float> heading-y: 30;
+    in property <float> heading-font-size: 20;
+    in property <float> hint-y: 58;
+    in property <float> hint-font-size: 12;
+    in property <float> panel-radius: 34;
+
+    in property <bool> number-shortcuts: true;
+    in property <string> window-title: "Layout Pie";
+    in property <string> heading-text: "";
+    in property <string> idle-hint-text: "Press 1-9/0 or hover a sector";
+    in property <string> hover-hint-text: "Click or press number to select";
+
+    in property <color> panel-background: #061426dd;
+    in property <color> panel-border: #1e4e74aa;
+    in property <color> heading-color: #d8f3ff;
+    in property <color> hint-color: #8fb8d4;
+    in property <color> sector-fill: #0b243dcc;
+    in property <color> sector-active-fill: #123f63cc;
+    in property <color> sector-stroke: #245a7c99;
+    in property <color> sector-active-stroke: #4fc6f5cc;
+    in property <color> hover-fill: #168fd0dd;
+    in property <color> hover-pressed-fill: #55cfffff;
+    in property <color> hover-stroke: #a9efffff;
+    in property <color> label-background: #0d2236dd;
+    in property <color> label-active-background: #123f63cc;
+    in property <color> label-border: #4a9fc8aa;
+    in property <color> label-active-border: #8aeaffcc;
+    in property <color> label-hover-background: #1e9edddd;
+    in property <color> label-text: #dff7ff;
+    in property <color> center-background: #07111fcc;
+    in property <color> center-border: #28506fdd;
+    in property <color> center-ring-fill: #9eefffff;
+    in property <color> center-ring-stroke: #dff8ffff;
+    in property <color> dot-background: #426985aa;
+    in property <color> dot-hover-background: #b9f1ffff;
+
+    callback selected(int);
+    callback canceled();
+    callback shortcut-key(string) -> bool;
+    pure callback sector-at(x: float, y: float) -> int;
+
+    property <int> hover-index: tracker.has-hover
+        ? root.sector-at(tracker.mouse-x / 1px, tracker.mouse-y / 1px)
+        : -1;
+
+    width: root.menu-size * 1px;
+    height: root.menu-size * 1px;
+    title: root.window-title;
+    no-frame: true;
+    always-on-top: true;
+    background: #00000000;
+
+    forward-focus: key-handler;
+
+    init => {
+        key-handler.focus();
+    }
+
+    key-handler := FocusScope {
+        width: parent.width;
+        height: parent.height;
+
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.canceled();
+                return accept;
+            }
+
+            if (root.number-shortcuts && root.shortcut-key(event.text)) {
+                return accept;
+            }
+
+            return reject;
+        }
+    }
+
+    Rectangle {
+        width: parent.width;
+        height: parent.height;
+        background: root.panel-background;
+        border-radius: root.panel-radius * 1px;
+        border-width: 1px;
+        border-color: root.panel-border;
+    }
+
+    Text {
+        text: root.heading-text;
+        x: 0px;
+        y: root.heading-y * 1px;
+        width: parent.width;
+        horizontal-alignment: center;
+        font-size: root.heading-font-size * 1px;
+        font-weight: 700;
+        color: root.heading-color;
+    }
+
+    Text {
+        text: root.hover-index >= 0 ? root.hover-hint-text : root.idle-hint-text;
+        x: 0px;
+        y: root.hint-y * 1px;
+        width: parent.width;
+        horizontal-alignment: center;
+        font-size: root.hint-font-size * 1px;
+        color: root.hint-color;
+    }
+
+    // Base pie sectors
+    for item in layouts: Path {
+        width: parent.width;
+        height: parent.height;
+        viewbox-width: root.menu-size;
+        viewbox-height: root.menu-size;
+        commands: item.path;
+
+        fill: item.active ? root.sector-active-fill : root.sector-fill;
+        stroke: item.active ? root.sector-active-stroke : root.sector-stroke;
+        stroke-width: item.active ? 2px : 1px;
+
+        anti-alias: true;
+    }
+
+    // Animated hover color overlay for each sector
+    for item in layouts: Path {
+        property <float> hover-amount: root.hover-index == item.index ? 1.0 : 0.0;
+
+        animate hover-amount {
+            duration: 150ms;
+            easing: ease-out;
+        }
+
+        width: parent.width;
+        height: parent.height;
+        viewbox-width: root.menu-size;
+        viewbox-height: root.menu-size;
+        commands: item.path;
+
+        opacity: hover-amount;
+        fill: tracker.pressed && root.hover-index == item.index
+            ? root.hover-pressed-fill
+            : root.hover-fill;
+        stroke: root.hover-stroke;
+        stroke-width: 2.5px;
+
+        anti-alias: true;
+    }
+
+    // Labels. The numeric prefix is the keyboard shortcut.
+    for item in layouts: Rectangle {
+        property <float> hover-amount: root.hover-index == item.index ? 1.0 : 0.0;
+
+        animate hover-amount {
+            duration: 130ms;
+            easing: ease-out;
+        }
+
+        x: (item.lx - root.label-width / 2) * 1px;
+        y: (item.ly - root.label-height / 2) * 1px;
+        width: root.label-width * 1px;
+        height: root.label-height * 1px;
+        border-radius: root.label-height / 2 * 1px;
+
+        background: item.active ? root.label-active-background : root.label-background;
+        border-width: 1px;
+        border-color: item.active ? root.label-active-border : root.label-border;
+
+        Rectangle {
+            width: parent.width;
+            height: parent.height;
+            border-radius: parent.border-radius;
+            opacity: hover-amount;
+            background: root.label-hover-background;
+        }
+
+        Text {
+            text: item.shortcut == "" ? item.label : item.shortcut + "  " + item.label;
+            width: parent.width;
+            height: parent.height;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            font-size: root.label-font-size * 1px;
+            font-weight: 800;
+            color: root.label-text;
+        }
+    }
+
+    // Center base circle
+    Rectangle {
+        x: (root.center-x - root.center-circle-radius) * 1px;
+        y: (root.center-y - root.center-circle-radius) * 1px;
+        width: root.center-circle-radius * 2 * 1px;
+        height: root.center-circle-radius * 2 * 1px;
+        border-radius: root.center-circle-radius * 1px;
+        background: root.center-background;
+        border-width: 1px;
+        border-color: root.center-border;
+    }
+
+    // Animated center ring segment matching hovered sector
+    for item in layouts: Path {
+        property <float> hover-amount: root.hover-index == item.index ? 1.0 : 0.0;
+
+        animate hover-amount {
+            duration: 150ms;
+            easing: ease-out;
+        }
+
+        width: parent.width;
+        height: parent.height;
+        viewbox-width: root.menu-size;
+        viewbox-height: root.menu-size;
+        commands: item.center_path;
+
+        opacity: hover-amount;
+        fill: root.center-ring-fill;
+        stroke: root.center-ring-stroke;
+        stroke-width: 1px;
+
+        anti-alias: true;
+    }
+
+    // Inner dot
+    Rectangle {
+        property <float> hover-amount: root.hover-index >= 0 ? 1.0 : 0.0;
+
+        animate hover-amount {
+            duration: 150ms;
+            easing: ease-out;
+        }
+
+        x: (root.center-x - root.center-dot-radius) * 1px;
+        y: (root.center-y - root.center-dot-radius) * 1px;
+        width: root.center-dot-radius * 2 * 1px;
+        height: root.center-dot-radius * 2 * 1px;
+        border-radius: root.center-dot-radius * 1px;
+
+        background: root.dot-background;
+
+        Rectangle {
+            width: parent.width;
+            height: parent.height;
+            border-radius: parent.border-radius;
+            opacity: hover-amount;
+            background: root.dot-hover-background;
+        }
+    }
+
+    // Invisible full-window input tracker.
+    // Rust decides which sector this point belongs to.
+    tracker := TouchArea {
+        width: parent.width;
+        height: parent.height;
+        mouse-cursor: pointer;
+
+        clicked => {
+            root.selected(root.hover-index);
+        }
+    }
+}
